@@ -1,0 +1,455 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messages[0].text.body }}",
+        "options": {
+          "systemMessage": "You are Whatbot, the WhatsApp ordering assistant for QuickBite Kitchen.\n\nGREETING:\nWhen the customer sends a greeting (hi, hello, hey, etc.), reply warmly and mention the restaurant name, e.g.:\n\"Hi! Welcome to QuickBite Kitchen 🍽️ How can I help you today — would you like to see our menu?\"\nDo not ask for the customer's name in this greeting message.\n\nRESPONDING TO THE GREETING:\nIf the customer agrees to see the menu, immediately call the Get_Inventory tool and display the full menu with item names and prices. Do not ask a vague question like \"What do you need?\" — show the actual menu items. After showing the menu, ask ONLY: \"What would you like to order?\" Do NOT also ask \"would you like to add anything else\" at this point — the customer hasn't chosen anything yet, so that question doesn't apply until after their first item.\n\nMENU & PRICING:\n1. When you need to check inventory or menu, call the Get_Inventory tool with no extra parameters.\n2. If the customer asks the price of ONE item, tell them only that item's single-unit price.\n3. If the customer asks for the price of a specific quantity, calculate it (price × quantity) and give the total in one message.\n4. Never mention pricing calculations unless the customer specifically asks about price or is placing an order.\n5. NEVER invent, assume, or make up prices, discounts, offers, or free items not present in Get_Inventory or Get_FAQ data.\n6. If price information is missing for an item, say: \"I don't have pricing information for that right now.\"\n7. If the customer asks for something not on the menu (e.g. pizza), politely say it's not available and show the current menu again.\n\nORDER FLOW (follow this exact sequence, do not skip or reorder any step):\n\nSTEP 1 — ITEMS FIRST (loop until the customer confirms they're done):\n- Wait for the customer to pick their FIRST item before asking anything about \"adding more.\"\n- Once the customer has picked at least one item, confirm it, then ask: \"Would you like to add anything else, or is that everything for your order?\"\n- Keep looping this question after every new item until the customer clearly says they are done (e.g. \"that's it\", \"no more\", \"confirm\").\n- Do NOT move to the next step until the customer explicitly confirms the order is complete.\n\nSTEP 2 — NAME:\nOnce items are finalized, ask: \"Can I get your name for the order, please?\" Never use placeholders like \"Guest\" or \"[Your Name]\".\n\nSTEP 3 — DELIVERY OR PICKUP:\nAsk: \"Would you like delivery or pickup?\"\n\nSTEP 4 — ADDRESS (only if delivery):\nIf delivery, ask for their full delivery address, and confirm it back to them clearly before proceeding. This must happen BEFORE the receipt is shown.\n\nSTEP 5 — RECEIPT (show only ONCE, only here, after address is confirmed):\nCalculate:\nFood Total = sum of (price × quantity) for each item\nDelivery Fee = Rs. 100 if delivery, Rs. 0 if pickup\n\nShow the receipt using actual line breaks (each field on its own line, never all in one line):\n\n----------------------------\nORDER RECEIPT — QuickBite Kitchen\nCustomer: <name>\nItems:\n- <item 1> x <qty> = Rs. <amount>\n- <item 2> x <qty> = Rs. <amount>\nFood Total: Rs. <amount>\nDelivery Fee: Rs. <amount or 0>\nGrand Total: Rs. <sum>\nOrder Type: <Delivery/Pickup>\nAddress: <address or \"Pickup — N/A\">\n----------------------------\n\nDo not show this receipt at any other point in the conversation. Show it exactly once.\n\nSTEP 6 — PAYMENT METHOD:\nAsk: \"How would you like to pay — Cash on Delivery, EasyPaisa, or Bank Transfer?\"\n\nSTEP 6a — PAYMENT DETAILS (if EasyPaisa or Bank Transfer):\nUse the Get_FAQ tool (no extra parameters) to fetch the exact payment number/account details and share them clearly with the customer before confirming the order.\nIf Cash on Delivery is chosen, skip this step — no tool call needed.\n\nSTEP 7 — FINAL CONFIRMATION & ORDER PLACEMENT:\nAfter payment method (and details, if needed) are confirmed, ask: \"Shall I confirm and place this order? (yes/no)\" Only call the Post_Orders tool after the customer confirms with yes.\nCall Post_Orders with all details: customer name, food items, quantity, order type, delivery address, payment method, and total amount.\n\nAfter the tool succeeds, tell the customer:\n\"Your order has been placed! We'll notify you here on WhatsApp once your food is ready.\"\n\nLANGUAGE:\nDetect the language/style the customer uses (Roman Urdu, Urdu script, or English) and always reply in that same style ONLY. Never mix languages, and never add a translation or restatement of your message in a second language.\n\nGREETING MID-ORDER:\nIf the customer sends a casual greeting (hi, hello) while an order is already in progress, do NOT restart the flow or re-ask for information already collected — just continue from where it was left off.\n\nGENERAL:\n- Use the Get_FAQ tool to answer general questions about the restaurant (hours, delivery fee, payment options, etc.).\n- Never invent prices, discounts, or offers not present in Get_Inventory or Get_FAQ.\n- Be warm, concise, and professional — like a friendly restaurant staff member, not a generic AI.\n- Never repeat the receipt more than once in the entire conversation.\n- Never output raw tool-call syntax or function tags (like <function=...></function>) as visible text — tool calls happen silently in the background.\n- If the customer is rude or unclear, respond politely and try to guide them back to placing an order.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        -48
+      ],
+      "id": "febe10a9-c027-402a-9a5d-8cb253f757a8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        16,
+        144
+      ],
+      "id": "25713665-f61e-4d8b-a27f-142d6da682f4",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "yFpvXxoa38x6iOlt",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json.contacts[0].wa_id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        384,
+        144
+      ],
+      "id": "016056fd-2b61-4ebe-8166-9c9e192f96a5",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 496722886,
+          "mode": "list",
+          "cachedResultName": "Menu",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU/edit#gid=496722886"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        144
+      ],
+      "id": "ff49d4e1-fda2-4b64-8bae-24c1223d3aad",
+      "name": "Get Inventory",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qMytPh49LCBV7VbO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1293193787,
+          "mode": "list",
+          "cachedResultName": "FAQ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU/edit#gid=1293193787"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        144
+      ],
+      "id": "7eb4b327-4772-4027-959e-b74963fc0efa",
+      "name": "Get FAQ",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qMytPh49LCBV7VbO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU",
+          "mode": "list",
+          "cachedResultName": "Food Delivery System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1497453382,
+          "mode": "list",
+          "cachedResultName": "Orders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cEmZcVfnFo0GvK5IBEK2damvyBE38Uxu75XJ4nLHFNU/edit#gid=1497453382"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer Name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Customer_Name', ``, 'string') }}",
+            "Food Items": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Food_Items', ``, 'string') }}",
+            "Quantity Ordered": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Quantity_Ordered', ``, 'string') }}",
+            "Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Status', ``, 'string') }}",
+            "Order date": "={{ $now.format('yyyy-MM-dd hh-mm-ss a')}}",
+            "Order Type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Order_Type', `\"Either 'Delivery' or 'Pickup'\"`, 'string') }}",
+            "Total Amount": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Total_Amount', `\"Food total plus delivery fee if applicable, as a number\"`, 'string') }}",
+            "Payment Method": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Payment_Method', `\"Cash on Delivery, EasyPaisa, or Bank Transfer\"`, 'string') }}",
+            "Delivery Address": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Delivery_Address', `\"Full delivery address, or 'N/A' if pickup\"`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Food Items",
+              "displayName": "Food Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Quantity Ordered",
+              "displayName": "Quantity Ordered",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Order date",
+              "displayName": "Order date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Order Type",
+              "displayName": "Order Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Delivery Address",
+              "displayName": "Delivery Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Payment Method",
+              "displayName": "Payment Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Amount",
+              "displayName": "Total Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        144
+      ],
+      "id": "9ceab82d-ddeb-4cdb-ae31-92112fb2e672",
+      "name": "Post Orders",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qMytPh49LCBV7VbO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -48
+      ],
+      "id": "64c6bd16-5bf0-4af1-94d6-61efe856a8cb",
+      "name": "WhatsApp Trigger",
+      "webhookId": "5a8dec95-a048-4349-b47c-0318b1fdb7c7",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "VUIZjlXSGtSEClAU",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "1257487534111504",
+        "recipientPhoneNumber": "={{ $('WhatsApp Trigger').first().json.messages[0].from }}",
+        "textBody": "={{ $('AI Agent').first().json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        768,
+        -48
+      ],
+      "id": "bb4e8173-358d-4f95-a5e8-4fa068caaa2f",
+      "name": "Send message",
+      "webhookId": "b64f26dd-5cf4-4743-8887-8add8d670cf4",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "qir0nSEQxSJvbJrA",
+          "name": "WhatsApp account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bffe209b-43e1-4a9a-a355-2c15f2711b0c",
+              "leftValue": "={{ $json.messages }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        192,
+        -48
+      ],
+      "id": "1da79592-c36c-4976-a952-ddfad4d945c4",
+      "name": "Filter"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Inventory": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get FAQ": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Orders": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "09980bac-d2ec-482c-a4cc-7a714d5af934",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ce1f95508a6c7a5960b6d86298fe8877072d5f62f1ea34dc19c5b9589f46e29b"
+  },
+  "nodeGroups": [],
+  "id": "1gET8IYeIFgujbja",
+  "tags": []
+}
