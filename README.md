@@ -54,6 +54,14 @@ All proof-of-work screenshots (workflow diagram, successful execution, WhatsApp 
 
 ---
 
+## 📄 Full Project Report
+
+A detailed report covering implementation steps, real challenges faced during development, solutions applied, and final testing results:
+
+👉 **[Read the Project Report](./Documentation/Azqa%20Naseeb%20WhatsApp%20AI%20Agent%20Project%20Report.pdf)**
+
+---
+
 ## ⚡ Challenges Faced
 
 Building this wasn't just "connect a few nodes and done" — real issues came up along the way:
@@ -78,6 +86,7 @@ Documenting and debugging these gave real hands-on experience with running an AI
 
 - `My workflow.json` — the exportable n8n workflow (import this into your own n8n instance to run it)
 - `Screenshots/` — all proof-of-work screenshots
+- `Documentation/` — full project report (PDF)
 
 ---
 
