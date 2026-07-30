@@ -39,7 +39,7 @@ All of this happens 24/7, without anyone manually replying.
 WhatsApp Message → Filter → AI Agent (Groq LLaMA) → Send WhatsApp Reply
                                 │
         ┌────────────┬──────────┼──────────┬────────────┐
-       Simple Memory  Get Inventory  Get FAQ  Post Orders
+        Simple Memory  Get Inventory  Get FAQ  Post Orders
 ```
 
 The AI Agent decides on its own which tool to use — checking inventory, answering a FAQ, or saving a new order — based on what the customer is asking.
@@ -48,21 +48,9 @@ The AI Agent decides on its own which tool to use — checking inventory, answer
 
 ## 📸 Screenshots
 
-**n8n Workflow — Architecture**
-![Workflow Editor](./Screenshots/whatbot-workflow-editor-view.png)
+All proof-of-work screenshots (workflow diagram, successful execution, WhatsApp conversations, and the Google Sheets order log) are available here:
 
-**Successful Execution Flow**
-![Execution Flow](./Screenshots/whatbot-workflow-execution-flow.png)
-
-**WhatsApp Business Profile**
-![Business Profile](./Screenshots/whatbot-whatsapp-business-profile.jpeg)
-
-**Real Conversation — Ordering in Action**
-![Chat 1](./Screenshots/QuickBiteKitchen_Agent.jpeg)
-![Chat 2](./Screenshots/QuickBiteKitchen_Agent1.jpeg)
-
-**Order Auto-Logged in Google Sheets**
-![Order Saved](./Screenshots/whatbot-google-sheets-order-saved.png)
+👉 **[View Screenshots](./Screenshots)**
 
 ---
 
@@ -89,7 +77,7 @@ Documenting and debugging these gave real hands-on experience with running an AI
 ## 📁 Project Files
 
 - `My workflow.json` — the exportable n8n workflow (import this into your own n8n instance to run it)
-- `Screenshots/` — all proof-of-work screenshots above
+- `Screenshots/` — all proof-of-work screenshots
 
 ---
 
